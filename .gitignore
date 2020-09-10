@@ -1,0 +1,12 @@
+# Eclipse
+.project
+.classpath
+.settings
+bin
+
+# Netbeans
+test
+nbproject
+build
+build.xml
+manifest.mf
