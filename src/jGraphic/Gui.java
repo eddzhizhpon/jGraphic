@@ -3,6 +3,7 @@ package jGraphic;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -10,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -28,6 +30,8 @@ public class Gui extends JFrame implements ActionListener {
 	private jGraphic jgraphic;
 
 	private JTextField gradoTxt;
+	private JCheckBox plotCB;
+
 	private String file;
 
 	public Gui() {
@@ -47,24 +51,38 @@ public class Gui extends JFrame implements ActionListener {
 
 		JPanel upPanel = new JPanel(new GridBagLayout());
 
+		JPanel btnPanel = new JPanel(new FlowLayout());
+
 		JButton upFileBtn = new JButton("Abrir Archivo");
 		upFileBtn.addActionListener(this);
 		upFileBtn.setActionCommand("upfile");
+		btnPanel.add(upFileBtn);
+
+		JButton plotBtn = new JButton("Plot");
+		plotBtn.addActionListener(this);
+		plotBtn.setActionCommand("plot");
+		btnPanel.add(plotBtn);
+
+		JButton cleanBtn = new JButton("Clean");
+		cleanBtn.addActionListener(this);
+		cleanBtn.setActionCommand("clean");
+		btnPanel.add(cleanBtn);
 
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.weightx = 1;
 		gbc.anchor = GridBagConstraints.WEST;
 		gbc.insets = new Insets(5, 5, 5, 5);
-		upPanel.add(upFileBtn, gbc);
+		upPanel.add(btnPanel, gbc);
 
-		JButton plotBtn = new JButton("Plot");
-		plotBtn.addActionListener(this);
-		plotBtn.setActionCommand("plot");
+		JPanel plotPanel = new JPanel(new FlowLayout());
+
+		plotCB = new JCheckBox("Plot/Stem");
+		plotPanel.add(plotCB);
 
 		gbc.anchor = GridBagConstraints.EAST;
 		gbc.gridx = 1;
-		upPanel.add(plotBtn, gbc);
+		upPanel.add(plotPanel, gbc);
 
 		/* Center Panel */
 
@@ -80,7 +98,7 @@ public class Gui extends JFrame implements ActionListener {
 		gbc.insets = new Insets(2, 2, 2, 2);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-		JLabel gradoLb = new JLabel("Grado:", 11);
+		JLabel gradoLb = new JLabel("Lenght:", 11);
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		downPanel.add(gradoLb, gbc);
@@ -90,9 +108,9 @@ public class Gui extends JFrame implements ActionListener {
 		gbc.gridy = 0;
 		downPanel.add(gradoTxt, gbc);
 
-		JButton evalBtn = new JButton("Evaluar");
+		JButton evalBtn = new JButton("Show");
 		evalBtn.addActionListener(this);
-		evalBtn.setActionCommand("eval");
+		evalBtn.setActionCommand("show");
 		gbc.gridx = 2;
 		gbc.gridy = 0;
 		downPanel.add(evalBtn, gbc);
@@ -110,7 +128,7 @@ public class Gui extends JFrame implements ActionListener {
 	private void plot() {
 		try {
 			if (!file.isEmpty())
-				jgraphic.addGraphic(controller.getX(), controller.getY(), null, Color.cyan, 10, false);
+				jgraphic.addGraphic(controller.getX(), controller.getY(), null, Color.cyan, 10, plotCB.isSelected());
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "Load Values.");
 		}
@@ -129,26 +147,11 @@ public class Gui extends JFrame implements ActionListener {
 		}
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		String c = e.getActionCommand();
-		switch (c) {
-		case "plot":
-			plot();
-			break;
-		case "eval":
-			evaluar();
-			break;
-		case "upfile":
-			upFile();
-			break;
-		default:
-			return;
-		}
-
+	private void clean() {
+		jgraphic.clean();
 	}
 
-	private void evaluar() {
+	private void showExample() {
 		try {
 			int n = Integer.parseInt(this.gradoTxt.getText());
 			double[] x = new double[n];
@@ -159,10 +162,32 @@ public class Gui extends JFrame implements ActionListener {
 				y[i] = Math.random() * 10;
 			}
 			jgraphic.addGraphic(x, y, null, new Color((int) (Math.random() * (255)), (int) (Math.random() * (255)),
-					(int) (Math.random() * (255))), 5, true);
+					(int) (Math.random() * (255))), 10, plotCB.isSelected());
 
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "Input a Value!");
+		}
+
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		String c = e.getActionCommand();
+		switch (c) {
+		case "plot":
+			plot();
+			break;
+		case "show":
+			showExample();
+			break;
+		case "upfile":
+			upFile();
+			break;
+		case "clean":
+			clean();
+			break;
+		default:
+			return;
 		}
 
 	}
