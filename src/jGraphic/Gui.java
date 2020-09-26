@@ -53,7 +53,7 @@ public class Gui extends JFrame implements ActionListener {
 
 		JPanel btnPanel = new JPanel(new FlowLayout());
 
-		JButton upFileBtn = new JButton("Abrir Archivo");
+		JButton upFileBtn = new JButton("Open File");
 		upFileBtn.addActionListener(this);
 		upFileBtn.setActionCommand("upfile");
 		btnPanel.add(upFileBtn);
@@ -78,6 +78,7 @@ public class Gui extends JFrame implements ActionListener {
 		JPanel plotPanel = new JPanel(new FlowLayout());
 
 		plotCB = new JCheckBox("Plot/Stem");
+		plotCB.setSelected(true);
 		plotPanel.add(plotCB);
 
 		gbc.anchor = GridBagConstraints.EAST;
@@ -98,7 +99,7 @@ public class Gui extends JFrame implements ActionListener {
 		gbc.insets = new Insets(2, 2, 2, 2);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-		JLabel gradoLb = new JLabel("Lenght:", 11);
+		JLabel gradoLb = new JLabel("Length:", 11);
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		downPanel.add(gradoLb, gbc);
@@ -128,9 +129,9 @@ public class Gui extends JFrame implements ActionListener {
 	private void plot() {
 		try {
 			if (!file.isEmpty())
-				jgraphic.addGraphic(controller.getX(), controller.getY(), null, Color.cyan, 10, plotCB.isSelected());
+				jgraphic.addGraphic(controller.getX(), controller.getY(), Color.cyan, 10, plotCB.isSelected());
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "Load Values.");
+			JOptionPane.showMessageDialog(null, "Load file");
 		}
 	}
 
@@ -141,7 +142,7 @@ public class Gui extends JFrame implements ActionListener {
 			this.file = fileChooser.getSelectedFile().getAbsolutePath();
 			controller.readFile(file);
 		} catch (NullPointerException e) {
-			System.out.println("No selected File!!");
+			System.out.println("No selected file");
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e.toString());
 		}
@@ -153,7 +154,7 @@ public class Gui extends JFrame implements ActionListener {
 
 	private void showExample() {
 		try {
-			int n = Integer.parseInt(this.gradoTxt.getText());
+			int n = Integer.parseInt(this.gradoTxt.getText()) + 1;
 			double[] x = new double[n];
 			double[] y = new double[n];
 
@@ -161,11 +162,11 @@ public class Gui extends JFrame implements ActionListener {
 				x[i] = i;
 				y[i] = Math.random() * 10;
 			}
-			jgraphic.addGraphic(x, y, null, new Color((int) (Math.random() * (255)), (int) (Math.random() * (255)),
+			jgraphic.addGraphic(x, y, new Color((int) (Math.random() * (255)), (int) (Math.random() * (255)),
 					(int) (Math.random() * (255))), 10, plotCB.isSelected());
 
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "Input a Value!");
+			JOptionPane.showMessageDialog(null, "Type a value");
 		}
 
 	}

@@ -61,7 +61,6 @@ public class jGraphic extends Canvas {
 	/* Valores para plot */
 	private List<double[]> xValues;
 	private List<double[]> yValues;
-	private List<String[]> sValues;
 	private List<Color> colors;
 	private List<Integer> sizes;
 	private List<Boolean> types;
@@ -76,7 +75,6 @@ public class jGraphic extends Canvas {
 
 		maxX = 0;
 		maxY = 0;
-
 		rescale = -50;
 
 		zoom = 0.0;
@@ -92,16 +90,15 @@ public class jGraphic extends Canvas {
 
 		grid = true;
 
-		title = "Title sdfdsfsdfdsf";
-		xLabel = "X dsfdsfsdf";
-		yLabel = "Y sdfsdfsdf";
+		title = "Title";
+		xLabel = "X";
+		yLabel = "Y";
 
 		titleSize = 16;
 		labelSize = 12;
 		numberSize = 10;
 
 		setBackground(backgroundColor);
-
 		super.addMouseWheelListener(e -> {
 			if (e.getWheelRotation() > 0) {
 				zoom += 10;
@@ -119,7 +116,6 @@ public class jGraphic extends Canvas {
 				if (zoom < -5000) {
 					zoom = -5000.0;
 				}
-
 			}
 			repaint();
 		});
@@ -147,61 +143,47 @@ public class jGraphic extends Canvas {
 				repaint();
 			}
 		});
-
 		repaint();
-
 	}
 
-	public void addGraphic(double[] x, double[] y, String[] s, Color c, int size, boolean isPlot) {
+	public void addGraphic(double[] x, double[] y, Color c, int size, boolean isPlot) {
 		if (xValues == null) {
 			xValues = new ArrayList<>();
 			yValues = new ArrayList<>();
-			sValues = new ArrayList<>();
 			colors = new ArrayList<>();
 			sizes = new ArrayList<>();
 			types = new ArrayList<>();
 		}
 		xValues.add(x);
 		yValues.add(y);
-		sValues.add(s);
 		colors.add(c);
 		sizes.add(size);
 		types.add(isPlot);
-
 		maxX = calcMax(xValues);
 		maxY = calcMax(yValues);
-
 		repaint();
 	}
 
 	public void clean() {
 		xValues = null;
 		yValues = null;
-		sValues = null;
 		colors = null;
 		sizes = null;
 		types = null;
-
 		moveX = 0;
 		moveY = 0;
-
 		maxX = 0.0;
 		maxY = 0.0;
-
 		rescale = -50;
-
 		zoom = 0.0;
 		xInterval = 50;
 		yInterval = 50;
-
 		repaint();
 	}
 
 	private double calcMax(List<double[]> a) {
-
 		double hightCurrent = 0.0;
 		double hight = 0.0;
-
 		for (double[] v : a) {
 			int n = v.length - 1;
 			double[] vAux = v.clone();
@@ -214,9 +196,7 @@ public class jGraphic extends Canvas {
 	}
 
 	private void drawLines(Graphics2D g) {
-
 		g.setColor(lineColor);
-
 		g.drawLine(-(super.getWidth() + moveX), 0, super.getWidth() - moveX, 0);
 		g.drawLine(0, midH - moveY, 0, -(midH + moveY));
 	}
@@ -227,7 +207,6 @@ public class jGraphic extends Canvas {
 	}
 
 	private void createPoints() {
-
 		xPoints = new ArrayList<>();
 		yPoints = new ArrayList<>();
 		xNPoints = new ArrayList<>();
@@ -296,72 +275,59 @@ public class jGraphic extends Canvas {
 	}
 
 	private void drawPoints(Graphics2D g) {
-		drawXPoints(g, xPoints, false);
-		drawXPoints(g, xNPoints, true);
-		drawYPoints(g, yPoints, false);
-		drawYPoints(g, yNPoints, true);
+		drawXYPoints(g, xPoints, xInterval, 'x', false);
+		drawXYPoints(g, xNPoints, xInterval, 'x', true);
+		drawXYPoints(g, yPoints, yInterval, 'y', false);
+		drawXYPoints(g, yNPoints, yInterval, 'y', true);
 	}
 
-	private void drawXPoints(Graphics2D g, List<Double> xPoints, boolean isNegative) {
+	private void drawXYPoints(Graphics2D g, List<Double> points, double interval, char key, boolean isNegative) {
 		double val = 0.0;
 		int p;
-		int n = xPoints.size();
+		int n = points.size();
 		String str;
+		FontRenderContext frc;
+		Rectangle2D bounds;
+		LineMetrics metrics;
+		float w;
+		float h;
+		g.setFont(new Font("Arial", 0, numberSize));
 		for (int i = 0; i < n; i++) {
-			g.setColor(lineColor);
-			val = val + xInterval;
-			p = xPoints.get(i).intValue();
-			g.drawLine(p, 5, p, -5);
-
-			g.setFont(new Font("Arial", 0, numberSize));
+			val = val + interval;
+			p = points.get(i).intValue();
 
 			if (isNegative)
 				str = String.format("%.2f", -val);
 			else
 				str = String.format("%.2f", val);
 
-			FontRenderContext frc = g.getFontRenderContext();
-			Rectangle2D bounds = g.getFont().getStringBounds(str, frc);
-			LineMetrics metrics = g.getFont().getLineMetrics(str, frc);
+			frc = g.getFontRenderContext();
+			bounds = g.getFont().getStringBounds(str, frc);
+			metrics = g.getFont().getLineMetrics(str, frc);
 
-			float w = (float) bounds.getWidth();
-			float h = (float) metrics.getHeight();
+			w = (float) bounds.getWidth();
+			h = (float) metrics.getHeight();
 
-			g.setColor(numberColor);
-			g.drawString(str, p - w / 2, h + 10);
-
+			if (key == 'x') {
+				drawXPoint(g, str, p, w, h);
+			} else {
+				drawYPoint(g, str, p, w, h);
+			}
 		}
 	}
 
-	private void drawYPoints(Graphics2D g, List<Double> yPoints, boolean isNegative) {
-		double val = 0.0;
-		int p;
-		int n = yPoints.size();
-		String str;
-		for (int i = 0; i < n; i++) {
-			g.setColor(lineColor);
-			val = val + yInterval;
-			p = yPoints.get(i).intValue();
-			g.drawLine(5, p, -5, p);
+	private void drawXPoint(Graphics2D g, String str, int p, float w, float h) {
+		g.setColor(lineColor);
+		g.drawLine(p, 5, p, -5);
+		g.setColor(numberColor);
+		g.drawString(str, p - w / 2, h + 10);
+	}
 
-			g.setFont(new Font("Arial", 0, numberSize));
-
-			if (isNegative)
-				str = String.format("%.2f", -val);
-			else
-				str = String.format("%.2f", val);
-
-			FontRenderContext frc = g.getFontRenderContext();
-			Rectangle2D bounds = g.getFont().getStringBounds(str, frc);
-			LineMetrics metrics = g.getFont().getLineMetrics(str, frc);
-
-			float w = (float) bounds.getWidth();
-			float h = (float) metrics.getHeight();
-
-			g.setColor(numberColor);
-			g.drawString(str, -w - 10, p + h / 2);
-
-		}
+	private void drawYPoint(Graphics2D g, String str, int p, float w, float h) {
+		g.setColor(lineColor);
+		g.drawLine(5, p, -5, p);
+		g.setColor(numberColor);
+		g.drawString(str, -w - 10, p + h / 2);
 	}
 
 	private Graphics2D drawPlotGraphic(Graphics2D g, double[] xValues, double[] yValues, int j) {
@@ -371,7 +337,6 @@ public class jGraphic extends Canvas {
 		int pointX2;
 		int n;
 		int i;
-
 		g.setColor(colors.get(j));
 		g.setStroke(new BasicStroke(sizes.get(j)));
 		i = 0;
@@ -380,12 +345,9 @@ public class jGraphic extends Canvas {
 		pointY1 = (int) rule3(yValues[i], maxY, midH - (int) zoom);
 		i++;
 		while (i < n) {
-
 			pointX2 = (int) rule3(xValues[i], maxX, midW - (int) zoom);
 			pointY2 = (int) rule3(yValues[i], maxY, midH - (int) zoom);
-
 			g.drawLine(pointX1, -pointY1, pointX2, -pointY2);
-
 			pointX1 = pointX2;
 			pointY1 = pointY2;
 			i++;
@@ -402,10 +364,8 @@ public class jGraphic extends Canvas {
 		i = 0;
 		n = xValues.length;
 		while (i < n) {
-
 			pointX1 = (int) rule3(xValues[i], maxX, midW - (int) zoom);
 			pointY1 = (int) rule3(yValues[i], maxY, midH - (int) zoom);
-
 			g.fillOval(pointX1 - (int) this.sizes.get(j) / 2, -(pointY1 + (int) this.sizes.get(j) / 2),
 					this.sizes.get(j), this.sizes.get(j));
 			i++;
@@ -416,7 +376,6 @@ public class jGraphic extends Canvas {
 	private Graphics2D drawGraphics(Graphics2D g) {
 		int j;
 		int n = xValues.size();
-
 		for (j = 0; j < n; j++) {
 			if (types.get(j)) {
 				drawPlotGraphic(g, xValues.get(j), yValues.get(j), j);
@@ -424,7 +383,6 @@ public class jGraphic extends Canvas {
 				drawStemGraphic(g, xValues.get(j), yValues.get(j), j);
 			}
 		}
-
 		return g;
 	}
 
@@ -433,26 +391,22 @@ public class jGraphic extends Canvas {
 		FontRenderContext frc = g.getFontRenderContext();
 		Rectangle2D bounds = g.getFont().getStringBounds(str, frc);
 		LineMetrics metrics = g.getFont().getLineMetrics(str, frc);
-
 		float w = (float) bounds.getWidth();
 		float h = (float) metrics.getHeight();
-
+		g.setColor(backgroundColor);
 		switch (key) {
 		case 't':
-			g.setColor(backgroundColor);
 			g.fill(new Rectangle2D.Double(x0 - 5 - w / 2, y0 - 5, w + 10, h + 13));
 			g.setColor(titleColor);
 			g.drawString(str, x0 - w / 2, y0 + h);
 			break;
 		case 'x':
-			g.setColor(backgroundColor);
 			g.fill(new Rectangle2D.Double(x0 - 5 - w / 2, y0 - 10 - h, w + 10, h + 15));
 			g.setColor(labelColor);
 			g.drawString(str, x0 - w / 2, y0 - 6);
 			break;
 		case 'y':
 			g.rotate(angle, x0, y0);
-			g.setColor(backgroundColor);
 			g.fill(new Rectangle2D.Double(x0 - 5 - w / 2, y0, w + 10, h + 15));
 			g.setColor(labelColor);
 			g.drawString(str, x0 - w / 2, y0 + h + 5);
@@ -466,34 +420,27 @@ public class jGraphic extends Canvas {
 	private void drawLabels(Graphics2D g) {
 		float x0 = (float) -moveX;
 		float y0 = (float) -moveY - midH + 5;
-
 		drawLabel(g, title, 't', x0, y0, 0, titleSize);
-
 		x0 = (float) -moveX;
 		y0 = (float) -(moveY - midH);
-
 		drawLabel(g, xLabel, 'x', x0, y0, 0, labelSize);
-
 		x0 = (float) -moveX - midW;
 		y0 = (float) -moveY;
-
 		drawLabel(g, yLabel, 'y', x0, y0, (float) -Math.PI / 2, labelSize);
 	}
 
 	public void paint(Graphics g) {
 		buffer = getBufferStrategy();
 		if (buffer == null) {
-			createBufferStrategy(2);
+			createBufferStrategy(4);
 			repaint();
 			return;
 		}
 		Graphics gb = buffer.getDrawGraphics();
 		this.midW = (int) ((super.getWidth()) / 2);
 		this.midH = (int) ((super.getHeight()) / 2);
-
 		int w = (midW) - 100 + rescale;
 		int h = (midH) - 100 + rescale;
-
 		if (zoom > w || zoom > h) {
 			if (w < h) {
 				zoom = (double) w;
@@ -501,11 +448,8 @@ public class jGraphic extends Canvas {
 				zoom = (double) h;
 			}
 		}
-
 		super.paint(gb);
-
 		Graphics2D g2d = (Graphics2D) gb;
-
 		g2d.translate(midW + moveX, midH + moveY);
 		drawLines(g2d);
 		createPoints();
@@ -519,6 +463,7 @@ public class jGraphic extends Canvas {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		g2d.dispose();
 		gb.dispose();
 		buffer.show();
 	}
