@@ -3,18 +3,25 @@ package jGraphic;
 import java.awt.BasicStroke;
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.MouseInfo;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineMetrics;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferStrategy;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class jGraphic extends Canvas {
 
@@ -52,24 +59,55 @@ public class jGraphic extends Canvas {
 	private double maxY;
 	public int rescale;
 
-	/* Valores para grficar el plano */
 	private List<Double> xPoints;
 	private List<Double> yPoints;
 	private List<Double> xNPoints;
 	private List<Double> yNPoints;
 
-	/* Valores para plot */
 	private List<double[]> xValues;
 	private List<double[]> yValues;
 	private List<Color> colors;
 	private List<Integer> sizes;
 	private List<Boolean> types;
 
+	private boolean mouseMoving;
+	private Timer timer = new Timer();
+	private TimerTask task = new MyTimerTask();
+	private double mouseX;
+	private double mouseY;
+	private double mouseXBefore;
+	private double mouseYBefore;
+
 	private BufferStrategy buffer;
+	private BufferedImage imgAux;
+	private Graphics gAux;
+	private Graphics gb;
+	private Graphics2D g2d;
+	private Dimension currentSize;
+
+	private class MyTimerTask extends TimerTask {
+		public synchronized void run() {
+			while (isMouseMoving()) {
+				mouseX = MouseInfo.getPointerInfo().getLocation().getX();
+				mouseY = MouseInfo.getPointerInfo().getLocation().getY();
+				if (mouseX != mouseXBefore && mouseY != mouseYBefore && isMouseMoving()) {
+					moveX = (int) (moveX - (mouseXBefore - mouseX));
+					moveY = (int) (moveY - (mouseYBefore - mouseY));
+					mouseXBefore = mouseX;
+					mouseYBefore = mouseY;
+					repaint();
+				}
+			}
+		}
+	}
+
+	public synchronized boolean isMouseMoving() {
+		return mouseMoving;
+	}
 
 	public jGraphic() {
 		super();
-
+		System.setProperty("sun.java2d.opengl", "true");
 		moveX = 0;
 		moveY = 0;
 
@@ -91,12 +129,16 @@ public class jGraphic extends Canvas {
 		grid = true;
 
 		title = "Title";
-		xLabel = "X";
-		yLabel = "Y";
+		xLabel = "X Axis";
+		yLabel = "Y Axis";
 
 		titleSize = 16;
 		labelSize = 12;
 		numberSize = 10;
+
+		mouseMoving = false;
+
+		currentSize = new Dimension(0, 0);
 
 		setBackground(backgroundColor);
 		super.addMouseWheelListener(e -> {
@@ -120,6 +162,38 @@ public class jGraphic extends Canvas {
 			repaint();
 		});
 
+		super.addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				if (e.getButton() == 1) {
+					mouseMoving = false;
+				}
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (e.getButton() == 1) {
+					mouseMoving = true;
+					mouseXBefore = MouseInfo.getPointerInfo().getLocation().getX();
+					mouseYBefore = MouseInfo.getPointerInfo().getLocation().getY();
+				}
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+			}
+		});
+		;
+
 		super.addKeyListener(new KeyListener() {
 
 			@Override
@@ -132,21 +206,33 @@ public class jGraphic extends Canvas {
 
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if (e.getKeyCode() == KeyEvent.VK_RIGHT)
+				if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 					moveX -= 10;
-				if (e.getKeyCode() == KeyEvent.VK_DOWN)
+					repaint();
+				}
+				if (e.getKeyCode() == KeyEvent.VK_DOWN) {
 					moveY -= 10;
-				if (e.getKeyCode() == KeyEvent.VK_LEFT)
+					repaint();
+				}
+				if (e.getKeyCode() == KeyEvent.VK_LEFT) {
 					moveX += 10;
-				if (e.getKeyCode() == KeyEvent.VK_UP)
+					repaint();
+				}
+				if (e.getKeyCode() == KeyEvent.VK_UP) {
 					moveY += 10;
-				repaint();
+					repaint();
+				}
+
 			}
 		});
+		timer.scheduleAtFixedRate(task, 0, 250);
 		repaint();
 	}
 
 	public void addGraphic(double[] x, double[] y, Color c, int size, boolean isPlot) {
+		if (x.length != y.length) {
+			throw new ArrayIndexOutOfBoundsException(" \"x\" and \"y\" must be the same size.");
+		}
 		if (xValues == null) {
 			xValues = new ArrayList<>();
 			yValues = new ArrayList<>();
@@ -214,13 +300,13 @@ public class jGraphic extends Canvas {
 		int div = 5;
 		try {
 			if (zoom <= -100) {
-				div = 7;
+				div = 10;
 			}
 			if (zoom <= -350) {
-				div = 9;
+				div = 15;
 			}
 			if (zoom <= -1000) {
-				div = 11;
+				div = 20;
 			}
 			xInterval = maxX / div;
 			yInterval = maxY / div;
@@ -429,14 +515,7 @@ public class jGraphic extends Canvas {
 		drawLabel(g, yLabel, 'y', x0, y0, (float) -Math.PI / 2, labelSize);
 	}
 
-	public void paint(Graphics g) {
-		buffer = getBufferStrategy();
-		if (buffer == null) {
-			createBufferStrategy(4);
-			repaint();
-			return;
-		}
-		Graphics gb = buffer.getDrawGraphics();
+	private void clacSizes() {
 		this.midW = (int) ((super.getWidth()) / 2);
 		this.midH = (int) ((super.getHeight()) / 2);
 		int w = (midW) - 100 + rescale;
@@ -448,8 +527,30 @@ public class jGraphic extends Canvas {
 				zoom = (double) h;
 			}
 		}
-		super.paint(gb);
-		Graphics2D g2d = (Graphics2D) gb;
+	}
+
+	public void update(Graphics g) {
+		paint(g);
+	}
+
+	public void paint(Graphics g) {
+		if (gAux == null || !currentSize.equals(getSize())) {
+			currentSize.width = getWidth() <= 0 ? 1 : getWidth();
+			currentSize.height = getHeight() <= 0 ? 1 : getHeight();
+			imgAux = new BufferedImage(currentSize.width, currentSize.height, BufferedImage.TYPE_INT_ARGB);
+		}
+		gAux = imgAux.createGraphics();
+		buffer = getBufferStrategy();
+		if (buffer == null) {
+			createBufferStrategy(2);
+			repaint();
+			return;
+		}
+		gb = buffer.getDrawGraphics();
+		g2d = (Graphics2D) gAux;
+		g2d.setColor(backgroundColor);
+		g2d.fillRect(0, 0, getWidth(), getHeight());
+		clacSizes();
 		g2d.translate(midW + moveX, midH + moveY);
 		drawLines(g2d);
 		createPoints();
@@ -463,6 +564,7 @@ public class jGraphic extends Canvas {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		gb.drawImage(imgAux, 0, 0, this);
 		g2d.dispose();
 		gb.dispose();
 		buffer.show();
